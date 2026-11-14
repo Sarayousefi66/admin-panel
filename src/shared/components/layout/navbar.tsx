@@ -191,7 +191,7 @@ export function Navbar() {
             <DropdownMenuSeparator className="my-1" />
 
             <DropdownMenuItem
-              onClick={() => logout()}
+              onClick={() => logout(undefined)}
               className="min-h-8 cursor-pointer gap-2 rounded-md px-2 text-[13px] text-destructive focus:bg-destructive/10 focus:text-destructive"
             >
               <LogOut className="size-3.5" />

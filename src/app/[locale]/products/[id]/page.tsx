@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 
 import {
@@ -8,8 +7,8 @@ import {
 
 import { notFound } from "next/navigation";
 
-import { productDetailQuery } from "@/features/products/api/products.query-options";
-import { ProductDetails } from "@/features/products/components/product-details";
+import { productDetailQuery } from "@/features/products/view-product/api/product-detail.query-options";
+import { ProductDetails } from "@/features/products/view-product/components/product-details";
 import { getQueryClient } from "@/shared/lib/react-query";
 
 export const revalidate = 60;
@@ -44,7 +43,7 @@ export default async function ProductPage({
 
   try {
     await queryClient.prefetchQuery(
-      productDetailQuery(Number(id))
+      productDetailQuery(Number(id)),
     );
   } catch {
     notFound();

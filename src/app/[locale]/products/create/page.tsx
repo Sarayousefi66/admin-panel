@@ -1,4 +1,4 @@
-import { CreateProductForm } from "@/features/products/components/create-product-form";
+import { CreateProductForm } from "@/features/products/create-product/components/create-product-form";
 
 export const metadata = {
   title: "Create Product",
@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function CreateProductPage() {
   return (
-    <div className="max-w-2xl mx-auto py-10">
+    <div className="mx-auto max-w-2xl py-10">
       <CreateProductForm />
     </div>
   );

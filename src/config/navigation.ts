@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Package,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 
@@ -22,5 +23,11 @@ export const navigation = [
     href: "/users",
     icon: Users,
     permission: "users.view",
+  },
+  {
+    labelKey: "roles",
+    href: "/roles",
+    icon: ShieldCheck,
+    permission: "roles.view",
   },
 ] as const;

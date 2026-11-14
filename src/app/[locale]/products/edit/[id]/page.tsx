@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 
-import { getProductById } from "@/features/products/api/products.api";
-
-import { EditProductForm } from "@/features/products/components/edit-product-form";
+import { EditProductForm } from "@/features/products/update-product/components/edit-product-form";
+import { getProductById } from "@/features/products/view-product/api/product-detail.api";
 
 interface Props {
   params: Promise<{
@@ -15,19 +14,15 @@ export default async function EditProductPage({
 }: Props) {
   const { id } = await params;
 
-  const product =
-    await getProductById(
-      Number(id)
-    );
+  const product = await getProductById(Number(id));
+
   if (!product) {
     notFound();
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-10">
-      <EditProductForm
-        product={product}
-      />
+    <div className="mx-auto max-w-2xl py-10">
+      <EditProductForm product={product} />
     </div>
   );
 }

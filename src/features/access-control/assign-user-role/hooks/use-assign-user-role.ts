@@ -1,4 +1,4 @@
-﻿import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { usersKeys } from '@/features/users/shared/api/users.query-keys';
 
@@ -22,7 +22,7 @@ export function useAssignUserRole() {
           queryKey: accessControlKeys.userRoles(variables.userId),
         }),
         queryClient.invalidateQueries({
-          queryKey: accessControlKeys.roles(),
+          queryKey: accessControlKeys.assignableRoles(),
         }),
         queryClient.invalidateQueries({
           queryKey: usersKeys.all,

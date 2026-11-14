@@ -21,7 +21,7 @@ import { useRevokeUserRole } from '../../revoke-user-role/hooks/use-revoke-user-
 import { useAssignableRolesQuery } from '../../view-assignable-roles/hooks/use-assignable-roles-query';
 import { useUserRolesQuery } from '../../view-user-roles/hooks/use-user-roles-query';
 
-import type { Role } from '../../shared/types/access-control.types';
+import type { Role } from '@/features/roles/shared/types/role.types';
 
 interface UserRolesSectionProps {
   userId: number;

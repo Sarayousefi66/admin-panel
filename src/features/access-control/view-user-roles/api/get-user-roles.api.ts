@@ -1,11 +1,10 @@
-﻿import { api } from '@/shared/lib/axios';
+import { api } from '@/shared/lib/axios';
 
 import type { ApiResponse } from '@/shared/types/api-response';
 
-import type {
-  Role,
-  UserRoleAssignment,
-} from '@/features/access-control/shared/types/access-control.types';
+import type { Role } from '@/features/roles/shared/types/role.types';
+
+import type { UserRoleAssignment } from '@/features/access-control/shared/types/access-control.types';
 
 export interface UserRolesData {
   roles: Role[];

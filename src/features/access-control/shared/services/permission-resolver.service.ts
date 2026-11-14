@@ -1,9 +1,12 @@
 import { PERMISSION_CATALOG } from '../constants/permission-catalog';
 
 import type {
-  Permission,
   Role,
   RolePermission,
+} from '@/features/roles/shared/types/role.types';
+
+import type {
+  Permission,
   UserAccessSnapshot,
   UserRoleAssignment,
 } from '../types/access-control.types';

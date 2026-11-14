@@ -4,15 +4,7 @@ import type {
   PermissionResource,
 } from '../constants/permission-catalog';
 
-export interface Role {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  isSystem: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import type { Role } from '@/features/roles/shared/types/role.types';
 
 export interface Permission {
   id: string;
@@ -20,12 +12,6 @@ export interface Permission {
   resource: PermissionResource;
   action: PermissionAction;
   labelKey: string;
-}
-
-export interface RolePermission {
-  id: string;
-  roleId: string;
-  permissionId: string;
 }
 
 export interface UserRoleAssignment {
@@ -38,22 +24,6 @@ export interface UserRoleAssignment {
 export interface UserAccessSnapshot {
   roles: Role[];
   permissions: PermissionKey[];
-}
-
-export interface CreateRolePayload {
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-export interface UpdateRolePayload {
-  name?: string;
-  description?: string;
-}
-
-export interface AssignRolePermissionPayload {
-  roleId: string;
-  permissionId: string;
 }
 
 export interface AssignUserRolePayload {

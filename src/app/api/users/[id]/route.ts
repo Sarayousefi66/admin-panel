@@ -1,4 +1,4 @@
-﻿
+
 import { NextRequest } from 'next/server';
 
 import { errorResponse, successResponse } from '@/lib/api-response';
@@ -9,10 +9,9 @@ import {
   type User,
 } from '@/features/users/shared/types/user.types';
 
-import type {
-  Role,
-  UserRoleAssignment,
-} from '@/features/access-control/shared/types/access-control.types';
+import type { Role } from '@/features/roles/shared/types/role.types';
+
+import type { UserRoleAssignment } from '@/features/access-control/shared/types/access-control.types';
 
 import { fetchMockApi } from '@/shared/lib/mock-api';
 

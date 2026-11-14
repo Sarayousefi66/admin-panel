@@ -1,100 +1,150 @@
 import { NextRequest } from "next/server";
 
-import {
-  successResponse,
-  errorResponse,
-} from "@/lib/api-response";
+import { errorResponse, successResponse } from "@/lib/api-response";
 
 import {
-  fetchProductById,
-  updateProductService,
   deleteProductService,
+  fetchProductById,
+  ProductServiceError,
+  updateProductService,
 } from "@/services/products.service";
 
-import { updateProductSchema } from "@/features/products/schemas/product-api.schema";
+import { updateProductSchema } from "@/features/products/shared/schemas/product-api.schema";
 
-export async function GET(
-  request: NextRequest,
-  context: {
-    params: Promise<{ id: string }>;
+interface RouteContext {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+function parseProductId(value: string): number | null {
+  const id = Number(value);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return null;
   }
+
+  return id;
+}
+
+function getErrorStatus(error: unknown): number {
+  if (
+    error instanceof ProductServiceError &&
+    error.status >= 400 &&
+    error.status <= 599
+  ) {
+    return error.status;
+  }
+
+  return 502;
+}
+
+/**
+ * GET /api/products/:id
+ */
+export async function GET(
+  _request: NextRequest,
+  context: RouteContext,
 ) {
   const { id } = await context.params;
+  const productId = parseProductId(id);
 
-  const data = await fetchProductById(
-    Number(id)
-  );
+  if (!productId) {
+    return errorResponse("Invalid product ID", 400);
+  }
 
-  return successResponse(data);
+  try {
+    const data = await fetchProductById(productId);
+
+    return successResponse(data);
+  } catch (error) {
+    const status = getErrorStatus(error);
+
+    return errorResponse(
+      status === 404
+        ? "Product not found"
+        : "Failed to fetch product",
+      status,
+    );
+  }
 }
 
+/**
+ * PATCH /api/products/:id
+ */
 export async function PATCH(
   request: NextRequest,
-  context: {
-    params: Promise<{ id: string }>;
-  }
+  context: RouteContext,
 ) {
+  const { id } = await context.params;
+  const productId = parseProductId(id);
+
+  if (!productId) {
+    return errorResponse("Invalid product ID", 400);
+  }
+
+  let body: unknown;
+
   try {
-    const { id } =
-      await context.params;
-
-    const body =
-      await request.json();
-
-    const result =
-      updateProductSchema.safeParse(
-        body
-      );
-
-    if (!result.success) {
-      return errorResponse(
-        result.error.issues[0]
-          ?.message,
-        400
-      );
-    }
-
-    const data =
-      await updateProductService(
-        Number(id),
-        result.data
-      );
-
-    return successResponse(
-      data,
-      "Product updated"
-    );
+    body = await request.json();
   } catch {
+    return errorResponse("Invalid request body", 400);
+  }
+
+  const result = updateProductSchema.safeParse(body);
+
+  if (!result.success) {
     return errorResponse(
-      "Failed to update product",
-      500
+      result.error.issues[0]?.message ?? "Invalid product data",
+      400,
+    );
+  }
+
+  try {
+    const data = await updateProductService(
+      productId,
+      result.data,
+    );
+
+    return successResponse(data, "Product updated");
+  } catch (error) {
+    const status = getErrorStatus(error);
+
+    return errorResponse(
+      status === 404
+        ? "Product not found"
+        : "Failed to update product",
+      status,
     );
   }
 }
 
+/**
+ * DELETE /api/products/:id
+ */
 export async function DELETE(
-  request: NextRequest,
-  context: {
-    params: Promise<{ id: string }>;
-  }
+  _request: NextRequest,
+  context: RouteContext,
 ) {
+  const { id } = await context.params;
+  const productId = parseProductId(id);
+
+  if (!productId) {
+    return errorResponse("Invalid product ID", 400);
+  }
+
   try {
-    const { id } =
-      await context.params;
+    const data = await deleteProductService(productId);
 
-    const data =
-      await deleteProductService(
-        Number(id)
-      );
+    return successResponse(data, "Product deleted");
+  } catch (error) {
+    const status = getErrorStatus(error);
 
-    return successResponse(
-      data,
-      "Product deleted"
-    );
-  } catch {
     return errorResponse(
-      "Failed to delete product",
-      500
+      status === 404
+        ? "Product not found"
+        : "Failed to delete product",
+      status,
     );
   }
 }

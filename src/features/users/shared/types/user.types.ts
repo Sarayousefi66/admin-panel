@@ -1,5 +1,5 @@
 import type { PermissionKey } from '@/features/access-control/shared/constants/permission-catalog';
-import type { Role } from '@/features/access-control/shared/types/access-control.types';
+import type { Role } from '@/features/roles/shared/types/role.types';
 
 export const USER_ROLES = ['admin', 'editor', 'viewer'] as const;
 

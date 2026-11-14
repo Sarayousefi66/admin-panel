@@ -1,0 +1,98 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
+
+import type { ApiResponse } from "@/shared/types/api-response";
+
+import { getErrorMessage } from "@/shared/lib/api-error";
+import { appToast } from "@/shared/lib/toast";
+
+import { productsKeys } from "../../shared/api/products.query-keys";
+import type {
+  GetProductsParams,
+  Product,
+  ProductListData,
+} from "../../shared/types/product.types";
+
+import { createProduct } from "../api/create-product.api";
+
+export function useCreateProduct() {
+  const queryClient = useQueryClient();
+  const t = useTranslations("products.notifications");
+  const errorT = useTranslations("errors");
+
+  return useMutation({
+    mutationFn: createProduct,
+
+    onMutate: async (newProduct) => {
+      await queryClient.cancelQueries({
+        queryKey: productsKeys.lists(),
+      });
+
+      const previousLists =
+        queryClient.getQueriesData<ApiResponse<ProductListData>>({
+          queryKey: productsKeys.lists(),
+        });
+
+      const tempProduct: Product = {
+        id: -Date.now(),
+        title: newProduct.title,
+        description: newProduct.description,
+        price: newProduct.price,
+        image: newProduct.image,
+      };
+
+      for (const [queryKey, previousResponse] of previousLists) {
+        const params = queryKey[2] as GetProductsParams | undefined;
+        const listData = previousResponse?.data;
+        const isFirstPage = (params?.page ?? 1) === 1;
+        const isUnfiltered =
+          !params?.search && !params?.sortBy && !params?.order;
+
+        if (
+          !previousResponse ||
+          !listData ||
+          !isFirstPage ||
+          !isUnfiltered
+        ) {
+          continue;
+        }
+
+        queryClient.setQueryData<ApiResponse<ProductListData>>(
+          queryKey,
+          {
+            ...previousResponse,
+            data: {
+              ...listData,
+              products: [tempProduct, ...listData.products],
+              total: listData.total + 1,
+            },
+          },
+        );
+      }
+
+      return { previousLists };
+    },
+
+    onError: (error, _newProduct, context) => {
+      for (const [queryKey, previousResponse] of
+        context?.previousLists ?? []) {
+        if (previousResponse) {
+          queryClient.setQueryData<ApiResponse<ProductListData>>(
+            queryKey,
+            previousResponse,
+          );
+        }
+      }
+
+      appToast.error(
+        getErrorMessage(error, errorT) || t("createFailed"),
+      );
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: productsKeys.all,
+      });
+    },
+  });
+}

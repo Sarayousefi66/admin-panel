@@ -1,11 +1,13 @@
+import {
+  getErrorMessage,
+  type ErrorTranslator,
+} from "./api-error";
+
 import { appToast } from "./toast";
 
-import { getErrorMessage } from "./api-error";
-
 export function handleMutationError(
-  error: unknown
+  error: unknown,
+  translate: ErrorTranslator,
 ) {
-  appToast.error(
-    getErrorMessage(error)
-  );
+  appToast.error(getErrorMessage(error, translate));
 }

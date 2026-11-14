@@ -6,4 +6,6 @@ export const ROUTE_PERMISSIONS = {
   "/users": "users.view",
 
   "/users/create": "users.create",
+
+  "/roles": "roles.view",
 };

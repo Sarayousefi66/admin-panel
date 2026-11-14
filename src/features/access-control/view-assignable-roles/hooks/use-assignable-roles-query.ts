@@ -1,4 +1,4 @@
-﻿
+
 import { useQuery } from '@tanstack/react-query';
 
 import { accessControlKeys } from '../../shared/api/access-control.query-keys';
@@ -13,7 +13,7 @@ export function useAssignableRolesQuery({
   enabled = true,
 }: UseAssignableRolesQueryOptions = {}) {
   return useQuery({
-    queryKey: accessControlKeys.roles(),
+    queryKey: accessControlKeys.assignableRoles(),
     queryFn: getAssignableRoles,
     enabled,
     staleTime: 1000 * 60,
