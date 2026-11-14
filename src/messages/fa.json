@@ -200,7 +200,7 @@
     "notifications": {
       "created": "کاربر با موفقیت ایجاد شد"
     },
-   "rolesManagement": {
+    "rolesManagement": {
       "title": "مدیریت نقش‌های کاربر",
       "description": "مشاهده و مدیریت نقش‌های اختصاص‌یافته به این کاربر.",
       "loading": "در حال دریافت نقش‌ها...",
