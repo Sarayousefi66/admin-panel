@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { usersKeys } from '../../shared/api/users.query-keys';
@@ -9,8 +10,8 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: createUser,
 
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
         queryKey: usersKeys.all,
       });
     },

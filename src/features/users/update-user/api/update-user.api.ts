@@ -1,11 +1,10 @@
-
 import { api } from '@/shared/lib/axios';
 import type { ApiResponse } from '@/shared/types/api-response';
 
-import type { UserFormValues } from '../../shared/schemas/user-form.schema';
+import type { UserProfileFormValues } from '../../shared/schemas/user-form.schema';
 import type { User } from '../../shared/types/user.types';
 
-export type UpdateUserData = Partial<UserFormValues> & {
+export type UpdateUserData = Partial<UserProfileFormValues> & {
   avatarUrl?: string | null;
 };
 
@@ -18,10 +17,7 @@ export async function updateUser(
   id: number,
   data: UpdateUserData,
 ): Promise<ApiResponse<User>> {
-  const response = await api.put<ApiResponse<User>>(
-    `/users/${id}`,
-    data,
-  );
+  const response = await api.put<ApiResponse<User>>(`/users/${id}`, data);
 
   return response.data;
 }

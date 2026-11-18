@@ -1,15 +1,17 @@
-import { NextRequest } from "next/server";
+import { NextRequest } from 'next/server';
 
-import { errorResponse, successResponse } from "@/lib/api-response";
+import { errorResponse, successResponse } from '@/lib/api-response';
 
 import {
   deleteProductService,
   fetchProductById,
   ProductServiceError,
   updateProductService,
-} from "@/services/products.service";
+} from '@/services/products.service';
 
-import { updateProductSchema } from "@/features/products/shared/schemas/product-api.schema";
+import { updateProductSchema } from '@/features/products/shared/schemas/product-api.schema';
+
+import { authorizeApiRequest } from '@/shared/lib/server-auth';
 
 interface RouteContext {
   params: Promise<{
@@ -43,14 +45,22 @@ function getErrorStatus(error: unknown): number {
  * GET /api/products/:id
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: RouteContext,
 ) {
+  const authorization = await authorizeApiRequest(request, [
+    'products.view',
+  ]);
+
+  if (!authorization.authorized) {
+    return authorization.response;
+  }
+
   const { id } = await context.params;
   const productId = parseProductId(id);
 
   if (!productId) {
-    return errorResponse("Invalid product ID", 400);
+    return errorResponse('Invalid product ID', 400);
   }
 
   try {
@@ -62,8 +72,8 @@ export async function GET(
 
     return errorResponse(
       status === 404
-        ? "Product not found"
-        : "Failed to fetch product",
+        ? 'Product not found'
+        : 'Failed to fetch product',
       status,
     );
   }
@@ -76,11 +86,19 @@ export async function PATCH(
   request: NextRequest,
   context: RouteContext,
 ) {
+  const authorization = await authorizeApiRequest(request, [
+    'products.edit',
+  ]);
+
+  if (!authorization.authorized) {
+    return authorization.response;
+  }
+
   const { id } = await context.params;
   const productId = parseProductId(id);
 
   if (!productId) {
-    return errorResponse("Invalid product ID", 400);
+    return errorResponse('Invalid product ID', 400);
   }
 
   let body: unknown;
@@ -88,14 +106,14 @@ export async function PATCH(
   try {
     body = await request.json();
   } catch {
-    return errorResponse("Invalid request body", 400);
+    return errorResponse('Invalid request body', 400);
   }
 
   const result = updateProductSchema.safeParse(body);
 
   if (!result.success) {
     return errorResponse(
-      result.error.issues[0]?.message ?? "Invalid product data",
+      result.error.issues[0]?.message ?? 'Invalid product data',
       400,
     );
   }
@@ -106,14 +124,14 @@ export async function PATCH(
       result.data,
     );
 
-    return successResponse(data, "Product updated");
+    return successResponse(data, 'Product updated');
   } catch (error) {
     const status = getErrorStatus(error);
 
     return errorResponse(
       status === 404
-        ? "Product not found"
-        : "Failed to update product",
+        ? 'Product not found'
+        : 'Failed to update product',
       status,
     );
   }
@@ -123,27 +141,35 @@ export async function PATCH(
  * DELETE /api/products/:id
  */
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: RouteContext,
 ) {
+  const authorization = await authorizeApiRequest(request, [
+    'products.delete',
+  ]);
+
+  if (!authorization.authorized) {
+    return authorization.response;
+  }
+
   const { id } = await context.params;
   const productId = parseProductId(id);
 
   if (!productId) {
-    return errorResponse("Invalid product ID", 400);
+    return errorResponse('Invalid product ID', 400);
   }
 
   try {
     const data = await deleteProductService(productId);
 
-    return successResponse(data, "Product deleted");
+    return successResponse(data, 'Product deleted');
   } catch (error) {
     const status = getErrorStatus(error);
 
     return errorResponse(
       status === 404
-        ? "Product not found"
-        : "Failed to delete product",
+        ? 'Product not found'
+        : 'Failed to delete product',
       status,
     );
   }

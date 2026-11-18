@@ -24,7 +24,9 @@
     "welcomeBack": "Welcome back",
     "logout": "Logout",
     "toggleSidebar": "Toggle sidebar",
-    "profile": "My Profile"
+    "profile": "My Profile",
+    "assignedRoles": "Assigned Roles",
+    "noAssignedRoles": "No roles assigned to this user."
   },
   "language": {
     "switchToPersian": "Switch to Persian",
@@ -43,12 +45,40 @@
       "password": "Password",
       "passwordPlaceholder": "Enter your password",
       "submit": "Login",
-      "submitting": "Logging in..."
+      "submitting": "Logging in...",
+      "panelTitle": "Admin Panel",
+      "panelEyebrow": "ADMIN WORKSPACE",
+      "workspaceBadge": "Unified management workspace",
+      "panelHeadline": "A simpler, more connected way to manage.",
+      "panelDescription": "Manage users, products, and access permissions in one unified workspace.",
+      "usersFeature": "Users",
+      "productsFeature": "Products",
+      "permissionsFeature": "Permissions"
+    },
+    "changeCredentials": {
+      "title": "Update your login details",
+      "description": "Before you continue, choose a new username and password for your account.",
+      "username": "New username",
+      "usernamePlaceholder": "Enter a new username",
+      "password": "New password",
+      "passwordPlaceholder": "Enter a new password",
+      "confirmPassword": "Confirm new password",
+      "confirmPasswordPlaceholder": "Re-enter your new password",
+      "submit": "Save and continue",
+      "submitting": "Saving...",
+      "validation": {
+        "usernameInvalid": "Use 3?32 characters: letters, numbers, dots, underscores, or hyphens.",
+        "passwordMin": "Password must contain at least 8 characters.",
+        "passwordMax": "Password cannot exceed 128 characters.",
+        "confirmPasswordMismatch": "Passwords do not match.",
+        "passwordComplexity": "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character."
+      }
     }
   },
   "notifications": {
     "loginSuccess": "Logged in successfully",
-    "logoutSuccess": "Logged out successfully"
+    "logoutSuccess": "Logged out successfully",
+    "credentialsChanged": "Your login details have been updated successfully."
   },
   "products": {
     "title": "Products",
@@ -138,7 +168,9 @@
       "age": "Age",
       "create": "Create User",
       "update": "Update User",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "username": "Username",
+      "initialPassword": "Initial password"
     },
     "filters": {
       "search": "Search users...",
@@ -195,7 +227,11 @@
       "firstNameMin": "First name must contain at least 2 characters.",
       "lastNameMin": "Last name must contain at least 2 characters.",
       "emailInvalid": "Please enter a valid email address.",
-      "ageMin": "User must be at least 18 years old."
+      "ageMin": "User must be at least 18 years old.",
+      "usernameInvalid": "Use 3?32 characters: letters, numbers, dots, underscores, or hyphens.",
+      "passwordMin": "Password must contain at least 8 characters.",
+      "passwordMax": "Password cannot exceed 128 characters.",
+      "passwordComplexity": "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character."
     },
     "notifications": {
       "created": "User created successfully"
@@ -247,8 +283,13 @@
     "description": "Welcome back! Here is an overview of your system.",
     "loadError": "Failed to load dashboard",
     "charts": {
-      "monthlyProducts": "Monthly Products",
-      "userStatus": "Users Status"
+      "userStatus": "Users Status",
+      "productPrices": "Product Prices",
+      "price": "Price",
+      "noProductData": "No product data available",
+      "noUserData": "No user status data available",
+      "usersCount": "Users",
+      "unknownStatus": "Other statuses"
     },
     "stats": {
       "totalProducts": "Total Products",

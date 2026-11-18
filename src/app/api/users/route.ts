@@ -11,6 +11,15 @@ import type { User } from '@/features/users/shared/types/user.types';
 import { fetchMockApi } from '@/shared/lib/mock-api';
 import { authorizeApiRequest } from '@/shared/lib/server-auth';
 
+import {
+  hashPassword,
+  isValidPassword,
+  isValidUsername,
+  normalizeUsername,
+} from '@/shared/lib/auth-crypto';
+
+import { findCredentialByUsername } from '@/shared/lib/auth-session';
+
 import { syncLegacyUserRole } from '@/features/access-control/shared/services/user-role-sync.service';
 
 interface CreateUserPayload {
@@ -18,6 +27,12 @@ interface CreateUserPayload {
   lastName: string;
   email: string;
   age: number;
+  username: string;
+  password: string;
+}
+
+interface MockCredential {
+  id: string | number;
 }
 
 function isCreateUserPayload(value: unknown): value is CreateUserPayload {
@@ -35,13 +50,23 @@ function isCreateUserPayload(value: unknown): value is CreateUserPayload {
 
   const email = typeof user.email === 'string' ? user.email.trim() : '';
 
+  const username =
+    typeof user.username === 'string'
+      ? normalizeUsername(user.username)
+      : '';
+
+  const password =
+    typeof user.password === 'string' ? user.password : '';
+
   return (
     firstName.length >= 2 &&
     lastName.length >= 2 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
     typeof user.age === 'number' &&
     Number.isInteger(user.age) &&
-    user.age >= 18
+    user.age >= 18 &&
+    isValidUsername(username) &&
+    isValidPassword(password)
   );
 }
 
@@ -55,6 +80,49 @@ async function getCollection<T>(path: string): Promise<T[] | null> {
   const data: unknown = await response.json();
 
   return Array.isArray(data) ? (data as T[]) : null;
+}
+
+/**
+ * Removes resources belonging to a newly created user.
+ *
+ * This is only used during rollback, before the user has been returned
+ * to the client.
+ */
+async function rollbackCreatedUser(userId: number): Promise<void> {
+  const [credentials, assignments] = await Promise.all([
+    getCollection<MockCredential>(
+      `/credentials?userId=${encodeURIComponent(String(userId))}`,
+    ),
+    getCollection<UserRoleAssignment>(
+      `/userRoles?userId=${encodeURIComponent(String(userId))}`,
+    ),
+  ]);
+
+  const cleanupTasks: Promise<unknown>[] = [];
+
+  for (const credential of credentials ?? []) {
+    cleanupTasks.push(
+      fetchMockApi(
+        `/credentials/${encodeURIComponent(String(credential.id))}`,
+        { method: 'DELETE' },
+      ).catch(() => undefined),
+    );
+  }
+
+  for (const assignment of assignments ?? []) {
+    cleanupTasks.push(
+      fetchMockApi(
+        `/userRoles/${encodeURIComponent(String(assignment.id))}`,
+        { method: 'DELETE' },
+      ).catch(() => undefined),
+    );
+  }
+
+  await Promise.all(cleanupTasks);
+
+  await fetchMockApi(`/users/${encodeURIComponent(String(userId))}`, {
+    method: 'DELETE',
+  }).catch(() => undefined);
 }
 
 export async function GET(request: NextRequest) {
@@ -184,7 +252,9 @@ export async function POST(request: NextRequest) {
     }
 
     const email = body.email.trim().toLowerCase();
+    const username = normalizeUsername(body.username);
 
+    // Check whether the email is already assigned to another user.
     const duplicateResponse = await fetchMockApi(
       `/users?email=${encodeURIComponent(email)}`,
     );
@@ -199,6 +269,16 @@ export async function POST(request: NextRequest) {
       return errorResponse('Email already exists', 409);
     }
 
+    // Usernames are stored separately from public user profiles.
+    const existingCredential = await findCredentialByUsername(username);
+
+    if (existingCredential) {
+      return errorResponse('Username already exists', 409);
+    }
+
+    // Hash the password before creating any database records.
+    const passwordCredentials = await hashPassword(body.password);
+
     const newUser = {
       firstName: body.firstName.trim(),
       lastName: body.lastName.trim(),
@@ -208,23 +288,46 @@ export async function POST(request: NextRequest) {
       status: 'active' as const,
     };
 
-    const response = await fetchMockApi('/users', {
+    const userResponse = await fetchMockApi('/users', {
       method: 'POST',
       body: JSON.stringify(newUser),
     });
 
-    if (!response.ok) {
-      return errorResponse('Failed to create user', response.status);
+    if (!userResponse.ok) {
+      return errorResponse('Failed to create user', userResponse.status);
     }
 
-    const createdUser = (await response.json()) as User;
+    const createdUser = (await userResponse.json()) as User;
+    const now = new Date().toISOString();
 
+    // Store authentication information separately from the user profile.
+    const credentialResponse = await fetchMockApi('/credentials', {
+      method: 'POST',
+      body: JSON.stringify({
+        userId: createdUser.id,
+        username,
+        salt: passwordCredentials.salt,
+        passwordHash: passwordCredentials.passwordHash,
+        mustChangeCredentials: true,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    });
+
+    if (!credentialResponse.ok) {
+      await rollbackCreatedUser(createdUser.id);
+
+      return errorResponse(
+        'Failed to create user credentials',
+        503,
+      );
+    }
+
+    // Assign the default role after both user and credential records exist.
     try {
       await syncLegacyUserRole(createdUser.id, 'viewer');
     } catch {
-      await fetchMockApi(`/users/${createdUser.id}`, {
-        method: 'DELETE',
-      }).catch(() => undefined);
+      await rollbackCreatedUser(createdUser.id);
 
       return errorResponse(
         'Failed to assign the default role to the new user',
@@ -232,6 +335,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Credentials are intentionally never included in the API response.
     return successResponse(createdUser, '', 201);
   } catch {
     return errorResponse('Users service is unavailable', 503);

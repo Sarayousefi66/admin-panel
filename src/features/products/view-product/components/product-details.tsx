@@ -90,7 +90,7 @@ export function ProductDetails({ id }: Props) {
                 </p>
 
                 <p className="text-2xl font-bold tabular-nums tracking-tight">
-                  ${productData.price}
+                  {productData.price}
                 </p>
               </div>
             </div>

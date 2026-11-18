@@ -13,38 +13,51 @@ export function Sidebar() {
   const pathname = usePathname();
   const t = useTranslations('navigation');
 
-  const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
+  const isSidebarOpen = useUIStore(
+    (state) => state.isSidebarOpen,
+  );
+
   const isMobileSidebarOpen = useUIStore(
     (state) => state.isMobileSidebarOpen,
   );
+
   const setMobileSidebar = useUIStore(
     (state) => state.setMobileSidebar,
   );
 
   const { canAccess } = usePermission();
 
-  const renderNavigation = () =>
+  const renderNavigation = (isCollapsed: boolean) =>
     navigation.map((item) => {
       if (!canAccess(item.permission)) {
         return null;
       }
 
       const Icon = item.icon;
+      const label = t(item.labelKey);
 
       const isActive =
         pathname === item.href ||
-        (item.href !== '/' && pathname.startsWith(`${item.href}/`));
+        (item.href !== '/' &&
+          pathname.startsWith(`${item.href}/`));
 
       return (
         <Link
           key={item.href}
           href={item.href}
           onClick={() => setMobileSidebar(false)}
+          aria-label={label}
           aria-current={isActive ? 'page' : undefined}
+          title={isCollapsed ? label : undefined}
           className={`
-            group relative flex min-h-10 items-center gap-3
-            rounded-md px-3 text-[13px] font-medium
-            transition-colors duration-150
+            group relative flex min-h-11 w-full
+            items-center rounded-xl text-[13px] font-medium
+            transition-all duration-200
+            ${
+              isCollapsed
+                ? 'justify-center px-0'
+                : 'gap-3 px-3'
+            }
             ${
               isActive
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-e-full before:bg-sidebar-primary'
@@ -53,8 +66,9 @@ export function Sidebar() {
           `}
         >
           <Icon
+            aria-hidden="true"
             className={`
-              size-[17px] shrink-0 transition-colors
+              size-[18px] shrink-0 transition-colors duration-200
               ${
                 isActive
                   ? 'text-sidebar-primary'
@@ -63,26 +77,66 @@ export function Sidebar() {
             `}
           />
 
-          <span className="truncate">{t(item.labelKey)}</span>
+          {!isCollapsed && (
+            <span className="min-w-0 flex-1 truncate">
+              {label}
+            </span>
+          )}
         </Link>
       );
     });
 
-  const sidebarContent = (
+  const renderSidebarContent = (isCollapsed: boolean) => (
     <>
-      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border px-5">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 text-sidebar-primary">
-          <LayoutDashboard className="size-[17px]" />
+      {/* Sidebar header */}
+      <div
+        className={`
+          flex h-16 shrink-0 items-center border-b border-sidebar-border
+          transition-all duration-200
+          ${
+            isCollapsed
+              ? 'justify-center px-2'
+              : 'gap-3 px-5'
+          }
+        `}
+      >
+        <div
+          title={isCollapsed ? 'Dashboard UI' : undefined}
+          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary/15 text-sidebar-primary"
+        >
+          <LayoutDashboard className="size-[19px]" />
         </div>
 
-        <h2 className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
-          Dashboard UI
-        </h2>
+        {!isCollapsed && (
+          <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-sidebar-foreground">
+            Dashboard UI
+          </h2>
+        )}
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-5">
-        {renderNavigation()}
+      {/* Navigation */}
+      <nav
+        aria-label="Main navigation"
+        className={`
+          flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto py-5
+          ${
+            isCollapsed
+              ? 'items-center px-2'
+              : 'px-3'
+          }
+        `}
+      >
+        {renderNavigation(isCollapsed)}
       </nav>
+
+      {/* Sidebar footer */}
+      {!isCollapsed && (
+        <div className="shrink-0 border-t border-sidebar-border px-5 py-3">
+          <p className="text-[10px] font-medium tracking-wide text-sidebar-foreground/40">
+            Dashboard UI
+          </p>
+        </div>
+      )}
     </>
   );
 
@@ -90,27 +144,38 @@ export function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <aside
-        className={
-          isSidebarOpen
-            ? 'hidden h-svh w-[248px] shrink-0 flex-col bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex'
-            : 'hidden'
-        }
+        aria-label="Desktop sidebar"
+        className={`
+          sticky top-0 hidden h-svh shrink-0 flex-col overflow-hidden
+          bg-sidebar text-sidebar-foreground
+          transition-[width] duration-200 ease-in-out
+          md:flex
+          ${
+            isSidebarOpen
+              ? 'w-[248px]'
+              : 'w-[72px]'
+          }
+        `}
       >
-        {sidebarContent}
+        {renderSidebarContent(!isSidebarOpen)}
       </aside>
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar backdrop */}
       {isMobileSidebarOpen && (
         <>
           <button
             type="button"
             aria-label="Close navigation"
             onClick={() => setMobileSidebar(false)}
-            className="fixed inset-0 z-40 cursor-default bg-black/45 backdrop-blur-[1px] md:hidden"
+            className="fixed inset-0 z-40 cursor-default bg-black/45 backdrop-blur-[2px] md:hidden"
           />
 
-          <aside className="fixed inset-y-0 start-0 z-50 flex h-svh w-[min(18rem,85vw)] flex-col bg-sidebar text-sidebar-foreground shadow-xl md:hidden">
-            {sidebarContent}
+          {/* Mobile sidebar */}
+          <aside
+            aria-label="Mobile sidebar"
+            className="fixed inset-y-0 start-0 z-50 flex h-svh w-[min(18rem,85vw)] flex-col overflow-hidden bg-sidebar text-sidebar-foreground shadow-xl md:hidden"
+          >
+            {renderSidebarContent(false)}
           </aside>
         </>
       )}

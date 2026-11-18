@@ -1,12 +1,12 @@
-import { queryOptions } from "@tanstack/react-query";
 
-import { getDashboardStats } from "./dashboard.api";
+import { queryOptions } from '@tanstack/react-query';
 
-export const dashboardStatsQuery =
-  queryOptions({
-    queryKey: ["dashboard", "stats"],
+import { getDashboardStats } from './dashboard.api';
 
-    queryFn: getDashboardStats,
+export const dashboardStatsQuery = queryOptions({
+  queryKey: ['dashboard', 'stats'],
 
-    staleTime: 1000 * 60,
-  });
+  queryFn: getDashboardStats,
+
+  staleTime: 0,
+});

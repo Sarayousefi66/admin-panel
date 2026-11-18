@@ -1,29 +1,42 @@
 
-"use client";
+'use client';
 
-import { Moon, Sun } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
+import { useSyncExternalStore } from 'react';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+
+function subscribe() {
+  return () => {};
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const t = useTranslations("theme");
+  const t = useTranslations('theme');
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
-  const isDark = resolvedTheme === "dark";
+  const isDark = resolvedTheme === 'dark';
 
   const label = !mounted
-    ? t("label")
+    ? t('label')
     : isDark
-      ? t("switchToLight")
-      : t("switchToDark");
+      ? t('switchToLight')
+      : t('switchToDark');
 
   return (
     <Button
@@ -33,15 +46,15 @@ export function ThemeToggle() {
       className="h-9 w-9 shrink-0 rounded-full p-0"
       disabled={!mounted}
       onClick={() => {
-        setTheme(isDark ? "light" : "dark");
+        setTheme(isDark ? 'light' : 'dark');
       }}
       aria-label={label}
       title={label}
     >
       {mounted && isDark ? (
-        <Sun className="h-4 w-4" />
+        <Sun className="size-4" />
       ) : (
-        <Moon className="h-4 w-4" />
+        <Moon className="size-4" />
       )}
     </Button>
   );

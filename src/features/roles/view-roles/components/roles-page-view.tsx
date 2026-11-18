@@ -34,7 +34,10 @@ export default function RolesPageView() {
 
   const { data, isLoading, error } = useRolesQuery();
 
-  const roles = data?.data ?? [];
+  const roles = useMemo(
+    () => data?.data ?? [],
+    [data?.data],
+  );
 
   const filteredRoles = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();

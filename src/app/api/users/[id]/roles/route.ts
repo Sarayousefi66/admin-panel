@@ -8,6 +8,7 @@ import type { Role } from '@/features/roles/shared/types/role.types';
 import type { UserRoleAssignment } from '@/features/access-control/shared/types/access-control.types';
 
 import { fetchMockApi } from '@/shared/lib/mock-api';
+import { hasPermission } from '@/shared/lib/permissions';
 import { authorizeApiRequest } from '@/shared/lib/server-auth';
 
 type RouteContext = {
@@ -45,10 +46,8 @@ export async function GET(
   request: NextRequest,
   context: RouteContext,
 ) {
-  const authorization = await authorizeApiRequest(
-    request,
-    ['users.view'],
-  );
+  // Authentication is required, but users may view their own roles.
+  const authorization = await authorizeApiRequest(request);
 
   if (!authorization.authorized) {
     return authorization.response;
@@ -59,6 +58,16 @@ export async function GET(
 
     if (userId === null) {
       return errorResponse('Invalid user id', 400);
+    }
+
+    const isSelf =
+      Number(authorization.user.id) === userId;
+
+    const canViewOtherUsers =
+      hasPermission(authorization.user, 'users.view');
+
+    if (!isSelf && !canViewOtherUsers) {
+      return errorResponse('Forbidden', 403);
     }
 
     const userResponse = await fetchMockApi(`/users/${userId}`);

@@ -3,10 +3,18 @@
 
 import Image from 'next/image';
 
-import { ChevronDown, LogOut, Menu, UserRound } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import {
+  ChevronDown,
+  LogOut,
+  Menu,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react';
+
+import { useLocale, useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,8 +38,15 @@ export function Navbar() {
   const { mutate: logout } = useLogout();
 
   const t = useTranslations('navbar');
+  const locale = useLocale();
 
-  const toggleSidebar = useUIStore((state) => state.toggleSidebar);
+  const isRtl = locale === 'fa';
+  const direction = isRtl ? 'rtl' : 'ltr';
+
+  const toggleSidebar = useUIStore(
+    (state) => state.toggleSidebar,
+  );
+
   const toggleMobileSidebar = useUIStore(
     (state) => state.toggleMobileSidebar,
   );
@@ -46,7 +61,10 @@ export function Navbar() {
 
   if (isLoading) {
     return (
-      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 sm:px-5 lg:px-7">
+      <header
+        dir={direction}
+        className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border/80 bg-card/95 px-3 backdrop-blur sm:px-5 lg:px-7"
+      >
         <div className="flex min-w-0 items-center gap-3">
           <Button
             type="button"
@@ -55,7 +73,7 @@ export function Navbar() {
             onClick={handleSidebarToggle}
             aria-label={t('toggleSidebar')}
             title={t('toggleSidebar')}
-            className="size-8 shrink-0"
+            className="size-9 shrink-0 rounded-lg"
           >
             <Menu className="size-4" />
           </Button>
@@ -69,8 +87,8 @@ export function Navbar() {
         <span className="sr-only">{t('loading')}</span>
 
         <div className="flex shrink-0 items-center gap-2">
-          <div className="size-8 animate-pulse rounded-md bg-muted" />
-          <div className="size-8 animate-pulse rounded-md bg-muted" />
+          <div className="size-9 animate-pulse rounded-lg bg-muted" />
+          <div className="size-9 animate-pulse rounded-lg bg-muted" />
         </div>
       </header>
     );
@@ -78,11 +96,32 @@ export function Navbar() {
 
   const user = data?.user;
 
-  const avatarInitial =
-    user?.name?.trim()?.slice(0, 1).toLocaleUpperCase() || 'U';
+  const displayName =
+    [user?.firstName, user?.lastName]
+      .filter((part) => Boolean(part?.trim()))
+      .join(' ') ||
+    user?.name?.trim() ||
+    'User';
+
+  // Dynamic assigned roles are the source of truth.
+  // Do not fall back to the legacy user.role field.
+  const assignedRoles = user?.roles ?? [];
+
+  const firstInitial = user?.firstName?.trim().charAt(0) ?? '';
+  const lastInitial = user?.lastName?.trim().charAt(0) ?? '';
+
+  const avatarInitials = (
+    `${firstInitial}${lastInitial}` ||
+    displayName.charAt(0) ||
+    'U'
+  ).toLocaleUpperCase(locale);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border/80 bg-card px-3 sm:px-5 lg:px-7">
+    <header
+      dir={direction}
+      className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border/80 bg-card/95 px-3 backdrop-blur sm:px-5 lg:px-7"
+    >
+      {/* Welcome section */}
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <Button
           type="button"
@@ -91,7 +130,7 @@ export function Navbar() {
           onClick={handleSidebarToggle}
           aria-label={t('toggleSidebar')}
           title={t('toggleSidebar')}
-          className="size-8 shrink-0 rounded-md border-border bg-background p-0 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
+          className="size-9 shrink-0 rounded-lg border-border bg-background p-0 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
         >
           <Menu className="size-4" />
         </Button>
@@ -101,21 +140,14 @@ export function Navbar() {
             {t('welcomeBack')}
           </p>
 
-          <h1 className="truncate text-[13px] font-semibold leading-5 tracking-tight text-foreground">
-            {t('hello', { name: user?.name ?? '' })}
+          <h1 className="truncate text-sm font-semibold leading-5 tracking-tight text-foreground">
+            {t('hello', { name: displayName })}
           </h1>
         </div>
       </div>
 
+      {/* Navbar actions */}
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        {user?.role && (
-          <div className="hidden items-center rounded-md border border-border bg-muted/60 px-2 py-1 sm:flex">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {user.role}
-            </span>
-          </div>
-        )}
-
         <div className="flex items-center gap-0.5">
           <LanguageSwitcher />
           <ThemeToggle />
@@ -123,78 +155,130 @@ export function Navbar() {
 
         <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
 
-        <DropdownMenu>
+        {/* Profile dropdown */}
+        <DropdownMenu dir={direction}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label={user?.name ?? 'User menu'}
-              className="group flex items-center gap-1 rounded-md p-0.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label={displayName}
+              className="group flex items-center gap-2 rounded-xl p-1 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-primary text-xs font-semibold text-primary-foreground">
+              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary/10 text-xs font-semibold text-primary ring-2 ring-transparent transition-all group-hover:ring-primary/15">
                 {user?.avatarUrl ? (
                   <Image
                     src={user.avatarUrl}
-                    alt={user.name ?? 'Profile'}
-                    width={32}
-                    height={32}
+                    alt={displayName}
+                    width={36}
+                    height={36}
                     unoptimized
                     className="size-full object-cover"
                   />
                 ) : (
-                  avatarInitial
+                  avatarInitials
                 )}
               </span>
 
-              <ChevronDown className="hidden size-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-180 sm:block" />
+              <span className="hidden max-w-32 truncate text-start text-xs font-medium text-foreground sm:block">
+                {displayName}
+              </span>
+
+              <ChevronDown className="hidden size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180 sm:block" />
             </button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
-            align="end"
-            sideOffset={6}
-            className="w-60 rounded-lg border-border p-1 shadow-lg"
+            align={isRtl ? 'start' : 'end'}
+            sideOffset={10}
+            className="w-72 rounded-xl border-border/80 bg-popover p-1.5 shadow-xl shadow-black/10"
           >
-            <div className="px-2.5 py-2">
-              <p className="truncate text-[13px] font-semibold text-foreground">
-                {user?.name}
-              </p>
-
-              {user?.email && (
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {user.email}
-                </p>
-              )}
-
-              {user?.role && (
-                <span className="mt-2 inline-flex rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
-                  {user.role}
+            {/* User information */}
+            <div className="rounded-lg bg-muted/50 p-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary/10 text-sm font-semibold text-primary">
+                  {user?.avatarUrl ? (
+                    <Image
+                      src={user.avatarUrl}
+                      alt={displayName}
+                      width={44}
+                      height={44}
+                      unoptimized
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    avatarInitials
+                  )}
                 </span>
-              )}
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {displayName}
+                  </p>
+
+                  {user?.email && (
+                    <p
+                      dir="ltr"
+                      className="mt-1 truncate text-start text-xs text-muted-foreground"
+                    >
+                      {user.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Assigned roles */}
+              <div className="mt-3 border-t border-border/70 pt-3">
+                <div className="mb-2 flex items-center gap-1.5 text-muted-foreground">
+                  <ShieldCheck className="size-3.5 shrink-0" />
+                  <span className="text-[11px] font-medium">
+                    {t('assignedRoles')}
+                  </span>
+                </div>
+
+                {assignedRoles.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {assignedRoles.map((role) => (
+                      <span
+                        key={role.id}
+                        title={role.slug}
+                        className="inline-flex max-w-full items-center rounded-md border border-primary/15 bg-primary/5 px-2 py-1 text-[11px] font-medium text-foreground"
+                      >
+                        <span className="truncate">
+                          {role.name || role.slug}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-md border border-dashed border-border px-2.5 py-2 text-xs text-muted-foreground">
+                    {t('noAssignedRoles')}
+                  </p>
+                )}
+              </div>
             </div>
 
-            {user?.id && (
-              <>
-                <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuSeparator className="my-1.5" />
 
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={`/users/${user.id}`}
-                    className="flex min-h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px]"
-                  >
-                    <UserRound className="size-3.5 text-muted-foreground" />
-                    <span>{t('profile')}</span>
-                  </Link>
-                </DropdownMenuItem>
-              </>
+            {/* Profile link */}
+            {user?.id && (
+              <DropdownMenuItem
+                asChild
+                className="min-h-10 cursor-pointer gap-2.5 rounded-lg px-3 text-sm"
+              >
+                <Link href={`/users/${user.id}`}>
+                  <UserRound className="size-4 shrink-0 text-muted-foreground" />
+                  <span>{t('profile')}</span>
+                </Link>
+              </DropdownMenuItem>
             )}
 
-            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuSeparator className="my-1.5" />
 
+            {/* Logout */}
             <DropdownMenuItem
               onClick={() => logout(undefined)}
-              className="min-h-8 cursor-pointer gap-2 rounded-md px-2 text-[13px] text-destructive focus:bg-destructive/10 focus:text-destructive"
+              className="min-h-10 cursor-pointer gap-2.5 rounded-lg px-3 text-sm text-destructive focus:bg-destructive/10 focus:text-destructive"
             >
-              <LogOut className="size-3.5" />
+              <LogOut className="size-4 shrink-0" />
               <span>{t('logout')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

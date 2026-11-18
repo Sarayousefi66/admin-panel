@@ -1,21 +1,10 @@
-import { api } from "@/shared/lib/axios";
-import type { ApiResponse } from "@/shared/types/api-response";
 
-import type { ProductListData } from "@/features/products/shared/types/product.types";
-import type { UserListData } from "@/features/users/shared/types/user.types";
+import { api } from '@/shared/lib/axios';
 
-import type { DashboardStats } from "../types/dashboard.types";
-
-type ProductCollectionPayload =
-  | ApiResponse<ProductListData>
-  | ProductListData;
-
-type UserCollectionPayload =
-  | ApiResponse<UserListData>
-  | UserListData;
+import type { DashboardStats } from '../types/dashboard.types';
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const { data } = await api.get<DashboardStats>("/dashboard");
+  const { data } = await api.get<DashboardStats>('/dashboard');
 
   return data;
 }

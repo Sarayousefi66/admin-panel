@@ -4,22 +4,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 
 import {
   createUserFormSchema,
-  type UserFormValues,
+  createUserProfileFormSchema,
+  type CreateUserFormValues,
+  type UserProfileFormValues,
 } from '../schemas/user-form.schema';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
-type Props = {
-  onSubmit: (values: UserFormValues) => void;
+type CommonProps = {
   isLoading?: boolean;
-  initialValues?: Partial<UserFormValues>;
-  mode?: 'create' | 'edit';
+  initialValues?: Partial<CreateUserFormValues>;
   title?: string;
   description?: string;
   submitLabel?: string;
@@ -27,54 +27,114 @@ type Props = {
   variant?: 'card' | 'dialog';
 };
 
-export function UserForm({
-  onSubmit,
-  isLoading = false,
-  initialValues,
-  mode = 'create',
-  title,
-  description,
-  submitLabel,
-  fullWidth = false,
-  variant = 'card',
-}: Props) {
+type CreateUserFormProps = CommonProps & {
+  mode?: 'create';
+  onSubmit: (values: CreateUserFormValues) => void;
+};
+
+type EditUserFormProps = CommonProps & {
+  mode: 'edit';
+  onSubmit: (values: UserProfileFormValues) => void;
+};
+
+type Props = CreateUserFormProps | EditUserFormProps;
+
+export function UserForm(props: Props) {
+  const {
+    isLoading = false,
+    initialValues,
+    title,
+    description,
+    submitLabel,
+    fullWidth = false,
+    variant = 'card',
+  } = props;
+
+  const mode = props.mode ?? 'create';
+  const isCreateMode = mode === 'create';
+
   const t = useTranslations('users.form');
   const validationT = useTranslations('users.validation');
 
   const formId = useId();
   const isDialog = variant === 'dialog';
 
-  const schema = useMemo(
-    () =>
-      createUserFormSchema({
-        firstNameMin: validationT('firstNameMin'),
-        lastNameMin: validationT('lastNameMin'),
-        emailInvalid: validationT('emailInvalid'),
-        ageMin: validationT('ageMin'),
-      }),
-    [validationT],
-  );
+  const schema = useMemo(() => {
+    const profileMessages = {
+      firstNameMin: validationT('firstNameMin'),
+      lastNameMin: validationT('lastNameMin'),
+      emailInvalid: validationT('emailInvalid'),
+      ageMin: validationT('ageMin'),
+    };
 
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(schema),
+    if (!isCreateMode) {
+      return createUserProfileFormSchema(profileMessages);
+    }
+
+    return createUserFormSchema({
+      ...profileMessages,
+      usernameInvalid: validationT('usernameInvalid'),
+      passwordMin: validationT('passwordMin'),
+      passwordMax: validationT('passwordMax'),
+      passwordComplexity: validationT('passwordComplexity'),
+    });
+  }, [isCreateMode, validationT]);
+
+  const form = useForm<CreateUserFormValues>({
+    resolver: zodResolver(schema) as unknown as Resolver<CreateUserFormValues>,
+    shouldUnregister: true,
     defaultValues: {
       firstName: '',
       lastName: '',
       email: '',
       age: 18,
+      ...(isCreateMode
+        ? {
+            username: '',
+            password: '',
+          }
+        : {}),
     },
   });
 
   useEffect(() => {
-    if (initialValues) {
-      form.reset({
-        firstName: initialValues.firstName ?? '',
-        lastName: initialValues.lastName ?? '',
-        email: initialValues.email ?? '',
-        age: initialValues.age ?? 18,
-      });
+    if (!initialValues) {
+      return;
     }
-  }, [initialValues, form]);
+
+    const profileValues = {
+      firstName: initialValues.firstName ?? '',
+      lastName: initialValues.lastName ?? '',
+      email: initialValues.email ?? '',
+      age: initialValues.age ?? 18,
+    };
+
+    if (isCreateMode) {
+      form.reset({
+        ...profileValues,
+        username: initialValues.username ?? '',
+        password: '',
+      });
+      return;
+    }
+
+    form.reset(profileValues);
+  }, [initialValues, form, isCreateMode]);
+
+  const handleFormSubmit = form.handleSubmit((values) => {
+    if (props.mode === 'edit') {
+      props.onSubmit({
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        age: values.age,
+      });
+
+      return;
+    }
+
+    props.onSubmit(values);
+  });
 
   const fieldWrapperClassName = isDialog
     ? 'flex min-w-0 flex-col gap-2.5'
@@ -86,9 +146,21 @@ export function UserForm({
     ? 'h-10 w-full rounded-lg border-input bg-background shadow-none'
     : undefined;
 
+  const renderError = (message?: string) => {
+    if (!message) {
+      return null;
+    }
+
+    return (
+      <p className="break-words text-xs text-destructive">
+        {message}
+      </p>
+    );
+  };
+
   const formContent = (
     <form
-      onSubmit={form.handleSubmit(onSubmit)}
+      onSubmit={handleFormSubmit}
       className={
         isDialog
           ? 'grid w-full min-w-0 grid-cols-1 gap-x-4 gap-y-5 px-6 pb-6 sm:grid-cols-2 sm:px-7'
@@ -100,7 +172,10 @@ export function UserForm({
       {/* First name */}
       <div className={fieldWrapperClassName}>
         {isDialog && (
-          <label htmlFor={`${formId}-first-name`} className={labelClassName}>
+          <label
+            htmlFor={`${formId}-first-name`}
+            className={labelClassName}
+          >
             {t('firstName')}
           </label>
         )}
@@ -111,20 +186,20 @@ export function UserForm({
           aria-label={t('firstName')}
           aria-invalid={!!form.formState.errors.firstName}
           className={fieldClassName}
+          autoComplete="given-name"
           {...form.register('firstName')}
         />
 
-        {form.formState.errors.firstName && (
-          <p className="break-words text-xs text-destructive">
-            {form.formState.errors.firstName.message}
-          </p>
-        )}
+        {renderError(form.formState.errors.firstName?.message)}
       </div>
 
       {/* Last name */}
       <div className={fieldWrapperClassName}>
         {isDialog && (
-          <label htmlFor={`${formId}-last-name`} className={labelClassName}>
+          <label
+            htmlFor={`${formId}-last-name`}
+            className={labelClassName}
+          >
             {t('lastName')}
           </label>
         )}
@@ -135,14 +210,11 @@ export function UserForm({
           aria-label={t('lastName')}
           aria-invalid={!!form.formState.errors.lastName}
           className={fieldClassName}
+          autoComplete="family-name"
           {...form.register('lastName')}
         />
 
-        {form.formState.errors.lastName && (
-          <p className="break-words text-xs text-destructive">
-            {form.formState.errors.lastName.message}
-          </p>
-        )}
+        {renderError(form.formState.errors.lastName?.message)}
       </div>
 
       {/* Email */}
@@ -154,7 +226,10 @@ export function UserForm({
         }
       >
         {isDialog && (
-          <label htmlFor={`${formId}-email`} className={labelClassName}>
+          <label
+            htmlFor={`${formId}-email`}
+            className={labelClassName}
+          >
             {t('email')}
           </label>
         )}
@@ -166,20 +241,20 @@ export function UserForm({
           aria-label={t('email')}
           aria-invalid={!!form.formState.errors.email}
           className={fieldClassName}
+          autoComplete="email"
           {...form.register('email')}
         />
 
-        {form.formState.errors.email && (
-          <p className="break-words text-xs text-destructive">
-            {form.formState.errors.email.message}
-          </p>
-        )}
+        {renderError(form.formState.errors.email?.message)}
       </div>
 
       {/* Age */}
       <div className={fieldWrapperClassName}>
         {isDialog && (
-          <label htmlFor={`${formId}-age`} className={labelClassName}>
+          <label
+            htmlFor={`${formId}-age`}
+            className={labelClassName}
+          >
             {t('age')}
           </label>
         )}
@@ -196,12 +271,65 @@ export function UserForm({
           })}
         />
 
-        {form.formState.errors.age && (
-          <p className="break-words text-xs text-destructive">
-            {form.formState.errors.age.message}
-          </p>
-        )}
+        {renderError(form.formState.errors.age?.message)}
       </div>
+
+      {/* Login credentials: create mode only */}
+      {isCreateMode && (
+        <>
+          {/* Username */}
+          <div className={fieldWrapperClassName}>
+            {isDialog && (
+              <label
+                htmlFor={`${formId}-username`}
+                className={labelClassName}
+              >
+                {t('username')}
+              </label>
+            )}
+
+            <Input
+              id={`${formId}-username`}
+              type="text"
+              placeholder={t('username')}
+              aria-label={t('username')}
+              aria-invalid={!!form.formState.errors.username}
+              className={fieldClassName}
+              autoComplete="username"
+              dir="ltr"
+              {...form.register('username')}
+            />
+
+            {renderError(form.formState.errors.username?.message)}
+          </div>
+
+          {/* Initial password */}
+          <div className={fieldWrapperClassName}>
+            {isDialog && (
+              <label
+                htmlFor={`${formId}-password`}
+                className={labelClassName}
+              >
+                {t('initialPassword')}
+              </label>
+            )}
+
+            <Input
+              id={`${formId}-password`}
+              type="password"
+              placeholder={t('initialPassword')}
+              aria-label={t('initialPassword')}
+              aria-invalid={!!form.formState.errors.password}
+              className={fieldClassName}
+              autoComplete="new-password"
+              dir="ltr"
+              {...form.register('password')}
+            />
+
+            {renderError(form.formState.errors.password?.message)}
+          </div>
+        </>
+      )}
 
       {/* Submit */}
       <div
@@ -226,7 +354,8 @@ export function UserForm({
         >
           {isLoading
             ? t('saving')
-            : (submitLabel ?? (mode === 'edit' ? t('update') : t('create')))}
+            : (submitLabel ??
+              (mode === 'edit' ? t('update') : t('create')))}
         </Button>
       </div>
     </form>

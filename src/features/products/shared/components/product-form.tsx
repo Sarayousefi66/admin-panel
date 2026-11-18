@@ -62,7 +62,25 @@ const ACCEPTED_IMAGE_TYPES = [
   "image/avif",
 ];
 
-export function ProductForm({
+export function ProductForm(props: Props) {
+  const initialDataKey = JSON.stringify([
+    props.mode,
+    props.initialData?.id ?? null,
+    props.initialData?.title ?? "",
+    props.initialData?.description ?? "",
+    props.initialData?.price ?? 0,
+    props.initialData?.image ?? null,
+  ]);
+
+  return (
+    <ProductFormContent
+      key={initialDataKey}
+      {...props}
+    />
+  );
+}
+
+function ProductFormContent({
   mode,
   initialData,
   onSubmit,
@@ -77,11 +95,13 @@ export function ProductForm({
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] =
+    useState<string | null>(null);
   const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    initialData?.image ?? null,
-  );
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const imagePreview = selectedImagePreview ??
+    (removeCurrentImage ? null : initialData?.image ?? null);
 
   const schema = useMemo(
     () =>
@@ -96,47 +116,26 @@ export function ProductForm({
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: "",
-      description: "",
-      price: 0,
-    },
-  });
-
-  useEffect(() => {
-    reset({
       title: initialData?.title ?? "",
       description: initialData?.description ?? "",
       price: initialData?.price ?? 0,
-    });
+    },
+  });
 
-    setSelectedImage(null);
-    setRemoveCurrentImage(false);
-
-    if (imageInputRef.current) {
-      imageInputRef.current.value = "";
-    }
-  }, [initialData, reset]);
-
+  // Release temporary image preview URLs.
   useEffect(() => {
-    if (selectedImage) {
-      const objectUrl = URL.createObjectURL(selectedImage);
-
-      setImagePreview(objectUrl);
-
-      return () => {
-        URL.revokeObjectURL(objectUrl);
-      };
+    if (!selectedImagePreview) {
+      return;
     }
 
-    setImagePreview(
-      removeCurrentImage ? null : initialData?.image ?? null,
-    );
-  }, [initialData?.image, removeCurrentImage, selectedImage]);
+    return () => {
+      URL.revokeObjectURL(selectedImagePreview);
+    };
+  }, [selectedImagePreview]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -155,12 +154,16 @@ export function ProductForm({
       return;
     }
 
+    const previewUrl = URL.createObjectURL(file);
+
     setSelectedImage(file);
+    setSelectedImagePreview(previewUrl);
     setRemoveCurrentImage(false);
   };
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
+    setSelectedImagePreview(null);
     setRemoveCurrentImage(true);
 
     if (imageInputRef.current) {

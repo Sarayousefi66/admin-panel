@@ -351,10 +351,8 @@ export async function GET(
   request: NextRequest,
   context: RouteContext,
 ) {
-  const authorization = await authorizeApiRequest(
-    request,
-    ['users.view'],
-  );
+  // Authenticate the request without requiring users.view.
+  const authorization = await authorizeApiRequest(request);
 
   if (!authorization.authorized) {
     return authorization.response;
@@ -365,6 +363,18 @@ export async function GET(
 
     if (userId === null) {
       return errorResponse('Invalid user id', 400);
+    }
+
+    // Users can always view their own profile.
+    const isOwnProfile =
+      Number(authorization.user.id) === userId;
+
+    // Viewing another user's profile requires users.view.
+    if (
+      !isOwnProfile &&
+      !hasApiPermissions(authorization.user, ['users.view'])
+    ) {
+      return errorResponse('Forbidden', 403);
     }
 
     const response = await fetchMockApi(`/users/${userId}`);

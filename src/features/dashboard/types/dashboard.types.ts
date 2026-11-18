@@ -1,6 +1,7 @@
-export interface MonthlyProductsChartItem {
-  month: string;
-  total: number;
+
+export interface ProductPriceChartItem {
+  title: string;
+  price: number;
 }
 
 export interface UserStatusChartItem {
@@ -17,7 +18,7 @@ export interface DashboardStats {
 
   pendingUsers: number;
 
-  monthlyProducts: MonthlyProductsChartItem[];
+  productPrices: ProductPriceChartItem[];
 
   userStatusDistribution: UserStatusChartItem[];
 }

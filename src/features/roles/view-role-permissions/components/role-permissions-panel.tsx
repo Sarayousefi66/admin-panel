@@ -45,8 +45,15 @@ export function RolePermissionsPanel({ roleId }: Props) {
     isPending: isRevoking,
   } = useRevokeRolePermission();
 
-  const permissions = data?.data?.permissions ?? [];
-  const assignedPermissionIds = data?.data?.assignedPermissionIds ?? [];
+const permissions = useMemo(
+  () => data?.data?.permissions ?? [],
+  [data?.data?.permissions],
+);
+
+const assignedPermissionIds = useMemo(
+  () => data?.data?.assignedPermissionIds ?? [],
+  [data?.data?.assignedPermissionIds],
+);
 
   const assignedSet = useMemo(
     () => new Set(assignedPermissionIds),

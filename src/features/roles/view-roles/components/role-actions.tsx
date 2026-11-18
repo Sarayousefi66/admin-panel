@@ -47,10 +47,6 @@ export function RoleActions({ role }: Props) {
   const canDelete =
     !role.isSystem && canAccess("roles.delete");
 
-  const canManagePermissions = canAccess(
-    "roles.assignPermissions",
-  );
-
   const { mutate: deleteRole, isPending } = useDeleteRole();
 
   const handleDelete = () => {

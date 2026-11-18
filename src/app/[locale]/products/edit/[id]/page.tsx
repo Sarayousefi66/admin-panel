@@ -1,7 +1,9 @@
-import { notFound } from "next/navigation";
 
-import { EditProductForm } from "@/features/products/update-product/components/edit-product-form";
-import { getProductById } from "@/features/products/view-product/api/product-detail.api";
+import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
+
+import { EditProductForm } from '@/features/products/update-product/components/edit-product-form';
+import { getProductById } from '@/features/products/view-product/api/product-detail.api';
 
 interface Props {
   params: Promise<{
@@ -13,8 +15,19 @@ export default async function EditProductPage({
   params,
 }: Props) {
   const { id } = await params;
+  const productId = Number(id);
 
-  const product = await getProductById(Number(id));
+  if (!Number.isSafeInteger(productId) || productId <= 0) {
+    notFound();
+  }
+
+  const requestHeaders = await headers();
+  const cookieHeader = requestHeaders.get('cookie') ?? undefined;
+
+  const product = await getProductById(
+    productId,
+    cookieHeader,
+  );
 
   if (!product) {
     notFound();

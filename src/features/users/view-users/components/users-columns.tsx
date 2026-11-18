@@ -1,6 +1,8 @@
 ﻿
 'use client';
 
+import Image from 'next/image';
+
 import type { ColumnDef } from '@tanstack/react-table';
 import { useEffect, useId, useRef, useState } from 'react';
 
@@ -41,6 +43,37 @@ function getRoleLabel(
     default:
       return role.name;
   }
+}
+
+function getUserInitials(user: User): string {
+  const firstName = user.firstName.trim();
+  const lastName = user.lastName.trim();
+
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
+
+  return initials.toLocaleUpperCase() || 'U';
+}
+
+function UserAvatar({ user }: { user: User }) {
+  return (
+    <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-primary/10 text-xs font-semibold text-primary ring-1 ring-border/50">
+      {user.avatarUrl ? (
+        <Image
+          src={user.avatarUrl}
+          alt=""
+          aria-hidden="true"
+          width={36}
+          height={36}
+          unoptimized
+          className="size-full object-cover"
+        />
+      ) : (
+        <span aria-hidden="true">
+          {getUserInitials(user)}
+        </span>
+      )}
+    </span>
+  );
 }
 
 function UserRoleBadges({
@@ -172,9 +205,13 @@ export function createUserColumns(
       accessorKey: 'firstName',
       header: t('table.firstName'),
       cell: ({ row }) => (
-        <span className="text-sm font-medium text-foreground">
-          {row.original.firstName}
-        </span>
+        <div className="flex min-w-0 items-center gap-3">
+          <UserAvatar user={row.original} />
+
+          <span className="truncate text-sm font-medium text-foreground">
+            {row.original.firstName}
+          </span>
+        </div>
       ),
     },
     {
@@ -190,7 +227,10 @@ export function createUserColumns(
       accessorKey: 'email',
       header: t('table.email'),
       cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">
+        <span
+          dir="ltr"
+          className="text-xs text-muted-foreground"
+        >
           {row.original.email}
         </span>
       ),
@@ -246,7 +286,10 @@ export function createUserColumns(
       size: 48,
       cell: ({ row }) => (
         <div className="flex items-center justify-end">
-          <UserManagementActions user={row.original} context="list" />
+          <UserManagementActions
+            user={row.original}
+            context="list"
+          />
         </div>
       ),
     },

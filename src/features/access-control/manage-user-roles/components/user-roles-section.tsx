@@ -7,12 +7,12 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/shared/components/common/confirm-dialog';
 
@@ -243,11 +243,6 @@ export function UserRolesSection({
     setSelectedRevokeRoleIds([]);
     setRevokeError(null);
   }
-
-  const selectedRevokeRoleNames = assignedRoles
-    .filter((role) => selectedRevokeRoleIds.includes(role.id))
-    .map(getRoleLabel)
-    .join(locale === 'fa' ? '، ' : ', ');
 
   function renderRoleOption(
     role: Role,

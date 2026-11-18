@@ -1,21 +1,34 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 import {
-    ProductImageStorageError,
-    removeProductImage,
-    saveProductImage,
-} from "@/features/products/shared/server/product-image-storage";
+  ProductImageStorageError,
+  removeProductImage,
+  saveProductImage,
+} from '@/features/products/shared/server/product-image-storage';
 
-export const runtime = "nodejs";
+import {
+  authorizeApiRequest,
+  hasApiPermissions,
+} from '@/shared/lib/server-auth';
 
-export async function POST(request: Request) {
+export const runtime = 'nodejs';
+
+export async function POST(request: NextRequest) {
+  const authorization = await authorizeApiRequest(request, [
+    'products.create',
+  ]);
+
+  if (!authorization.authorized) {
+    return authorization.response;
+  }
+
   try {
     const formData = await request.formData();
-    const file = formData.get("file");
+    const file = formData.get('file');
 
     if (!(file instanceof File)) {
       return NextResponse.json(
-        { error: "An image file is required" },
+        { error: 'An image file is required' },
         { status: 400 },
       );
     }
@@ -34,21 +47,42 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: "Failed to upload product image" },
+      { error: 'Failed to upload product image' },
       { status: 500 },
     );
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+  const authorization = await authorizeApiRequest(request);
+
+  if (!authorization.authorized) {
+    return authorization.response;
+  }
+
+  const canCreate = hasApiPermissions(authorization.user, [
+    'products.create',
+  ]);
+
+  const canEdit = hasApiPermissions(authorization.user, [
+    'products.edit',
+  ]);
+
+  if (!canCreate && !canEdit) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 },
+    );
+  }
+
   try {
     const body = (await request.json()) as {
       url?: unknown;
     };
 
-    if (typeof body.url !== "string") {
+    if (typeof body.url !== 'string') {
       return NextResponse.json(
-        { error: "A valid image URL is required" },
+        { error: 'A valid image URL is required' },
         { status: 400 },
       );
     }
@@ -67,7 +101,7 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json(
-      { error: "Failed to delete product image" },
+      { error: 'Failed to delete product image' },
       { status: 500 },
     );
   }

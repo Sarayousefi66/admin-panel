@@ -5,9 +5,7 @@ import type { User } from '@/features/users/shared/types/user.types';
 
 import { isValidAvatarValue } from '@/shared/lib/avatar';
 import { fetchMockApi } from '@/shared/lib/mock-api';
-
-const MOCK_SESSION_TOKEN = 'fake-jwt-token';
-const CURRENT_USER_ID = 1;
+import { authorizeApiRequest } from '@/shared/lib/server-auth';
 
 interface ProfileUpdatePayload {
   firstName: string;
@@ -28,14 +26,13 @@ function isObject(
 }
 
 export async function PATCH(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
+  const authorization = await authorizeApiRequest(request);
 
-  if (token !== MOCK_SESSION_TOKEN) {
-    return NextResponse.json(
-      { success: false, message: 'Unauthorized' },
-      { status: 401 },
-    );
+  if (!authorization.authorized) {
+    return authorization.response;
   }
+
+  const currentUserId = authorization.user.id;
 
   try {
     const rawBody: unknown = await request.json();
@@ -91,13 +88,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     const currentResponse = await fetchMockApi(
-      `/users/${CURRENT_USER_ID}`,
+      `/users/${currentUserId}`,
     );
 
     if (!currentResponse.ok) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
-        { status: 404 },
+        { status: currentResponse.status === 404 ? 404 : 503 },
       );
     }
 
@@ -116,7 +113,7 @@ export async function PATCH(request: NextRequest) {
 
     if (
       matchingUsers.some(
-        (user) => user.id !== CURRENT_USER_ID,
+        (user) => Number(user.id) !== currentUserId,
       )
     ) {
       return NextResponse.json(
@@ -137,7 +134,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updateResponse = await fetchMockApi(
-      `/users/${CURRENT_USER_ID}`,
+      `/users/${currentUserId}`,
       {
         method: 'PATCH',
         body: JSON.stringify(updatePayload),
