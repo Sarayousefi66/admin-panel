@@ -530,20 +530,20 @@
     {
       "id": 1,
       "userId": 1,
-      "username": "admin",
-      "salt": "1787e713684bf8285280eb21bf621b9a",
-      "passwordHash": "836d65ac6c44b2d45cbc5f3faeee37aeabf6745b3bcd96fd3a76afd797535cc96a904c7b1296010835123182353c0f9d5aaf42744f007add94fd43ea32b96c7e",
+      "username": "sara",
+      "salt": "d968938fb629eff13c555658e54ffd18",
+      "passwordHash": "7acf9a89dab450be84dbb435018ce53834fc7f55eb25dd3ab61856ccbd4c7ca899eb3a8aae74d3e51dce5c3d1bbea59bb309c4ae6c224c8336861249cb84c4ad",
       "mustChangeCredentials": false,
       "createdAt": "2026-11-14T09:01:17.239Z",
-      "updatedAt": "2026-11-16T22:00:16.469Z"
+      "updatedAt": "2026-11-18T20:57:35.157Z"
     }
   ],
   "sessions": [
     {
       "userId": 1,
-      "tokenHash": "d92f9c91db120689adb67e3e99b7d50eed972de686f4a75a661245934ce3866a",
-      "expiresAt": "2026-11-23T21:58:30.897Z",
-      "createdAt": "2026-11-16T21:58:30.897Z",
+      "tokenHash": "632be5eb5161fc11e4556b0ca0b8b5f582e9154467d655fe8972693c4fec9551",
+      "expiresAt": "2026-11-25T20:56:35.736Z",
+      "createdAt": "2026-11-18T20:56:35.736Z",
       "id": 1
     }
   ]
