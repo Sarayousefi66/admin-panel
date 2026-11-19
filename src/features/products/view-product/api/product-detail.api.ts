@@ -1,22 +1,31 @@
+import { api } from "@/shared/lib/axios";
+import type { ApiResponse } from "@/shared/types/api-response";
 
-import { api } from '@/shared/lib/axios';
-import type { ApiResponse } from '@/shared/types/api-response';
-
-import type { Product } from '../../shared/types/product.types';
+import type { Product } from "../../shared/types/product.types";
 
 export async function getProductById(
   id: number,
   cookieHeader?: string,
+  requestOrigin?: string,
 ): Promise<ApiResponse<Product>> {
-  const response = await api.get<ApiResponse<Product>>(
-    `/products/${id}`,
-    cookieHeader
+  const requestConfig = {
+    ...(requestOrigin
+      ? {
+          baseURL: `${requestOrigin.replace(/\/+$/, "")}/api`,
+        }
+      : {}),
+    ...(cookieHeader
       ? {
           headers: {
             Cookie: cookieHeader,
           },
         }
-      : undefined,
+      : {}),
+  };
+
+  const response = await api.get<ApiResponse<Product>>(
+    `/products/${id}`,
+    requestConfig,
   );
 
   return response.data;
